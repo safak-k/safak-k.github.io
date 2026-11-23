@@ -34,8 +34,11 @@ const easeBack = v => { const c1 = 1.5, c3 = c1 + 1; return 1 + c3 * Math.pow(v 
 let seed = 7;
 const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
 
+/* Animasyon başlangıç zamanı (gün değişince sıfırlanır) */
+let start = performance.now();
+
 /* Günün rengi: Türkiye saatine göre (UTC+3), cihazın saat diliminden bağımsız.
-   Gece yarısı (TR) renk sayfa yenilenmeden değişir. */
+   Gece yarısı (TR) renk sayfa yenilenmeden değişir ve açılış animasyonu tekrar oynar. */
 const TR_OFFSET = 3 * 60 * 60 * 1000;   // Türkiye sabit UTC+3, yaz saati yok
 
 /* Cihaz saati yanlışsa sunucu saatiyle düzelt (sunucunun Date başlığı) */
@@ -55,7 +58,11 @@ let HUE = (dayNum * 137.508) % 360;
 
 function updateHue() {
   const d = trDayNum();
-  if (d !== dayNum) { dayNum = d; HUE = (d * 137.508) % 360; }
+  if (d !== dayNum) {
+    dayNum = d;
+    HUE = (d * 137.508) % 360;
+    start = performance.now();   // açılış animasyonunu baştan oynat
+  }
 }
 
 const hsl  = (dh, s, l)    => `hsl(${(HUE + dh + 360) % 360},${s}%,${l}%)`;
@@ -148,10 +155,9 @@ function drawPetal(cx, cy, ang, len, wid, curl, back, k, b, R) {
   }
 }
 
-const start = performance.now();
 function frame(now) {
   updateHue();
-  const t = (now - start) / 1000;
+  const t = Math.max(0, (now - start) / 1000);
   x.clearRect(0, 0, W, H);
   drawBokeh(t);
 
